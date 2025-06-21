@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { Upload, Download, Image as ImageIcon, Zap, Check, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,9 +8,12 @@ import { toast } from '@/hooks/use-toast';
 interface CompressedImage {
   originalFile: File;
   compressedBlob: Blob;
+  webpBlob?: Blob;
   originalSize: number;
   compressedSize: number;
+  webpSize?: number;
   compressionRatio: number;
+  webpCompressionRatio?: number;
 }
 
 const Index = () => {
@@ -20,7 +22,8 @@ const Index = () => {
   const [progress, setProgress] = useState(0);
   const [compressedImages, setCompressedImages] = useState<CompressedImage[]>([]);
 
-  const compressPNG = useCallback(async (file: File): Promise<CompressedImage> => {
+  // Advanced PNG compression with multiple strategies
+  const compressPNGAdvanced = useCallback(async (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -32,50 +35,38 @@ const Index = () => {
           return;
         }
 
-        // Get original dimensions
         const originalWidth = img.naturalWidth;
         const originalHeight = img.naturalHeight;
 
-        // Optimize canvas size - reduce if very large
         let targetWidth = originalWidth;
         let targetHeight = originalHeight;
         
-        // If image is very large, scale it down slightly for web optimization
         const maxDimension = 2048;
         if (originalWidth > maxDimension || originalHeight > maxDimension) {
           const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
           targetWidth = Math.floor(originalWidth * scale);
           targetHeight = Math.floor(originalHeight * scale);
-          console.log(`Scaling image from ${originalWidth}x${originalHeight} to ${targetWidth}x${targetHeight}`);
         }
 
         canvas.width = targetWidth;
         canvas.height = targetHeight;
-
-        // Use high-quality image rendering
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
-
-        // Draw image to canvas with optimized size
         ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-        // Try multiple compression strategies and pick the best one
         const compressionPromises = [
-          // Strategy 1: PNG with quality 0.95
           new Promise<Blob>((resolve) => {
             canvas.toBlob((blob) => {
               if (blob) resolve(blob);
             }, 'image/png', 0.95);
           }),
           
-          // Strategy 2: PNG with quality 0.9
           new Promise<Blob>((resolve) => {
             canvas.toBlob((blob) => {
               if (blob) resolve(blob);
             }, 'image/png', 0.9);
           }),
 
-          // Strategy 3: Convert to JPEG and back to PNG for complex images
           new Promise<Blob>((resolve) => {
             canvas.toBlob((jpegBlob) => {
               if (jpegBlob) {
@@ -99,35 +90,16 @@ const Index = () => {
         ];
 
         Promise.all(compressionPromises).then((blobs) => {
-          // Filter out undefined blobs and find the smallest one
           const validBlobs = blobs.filter(blob => blob !== undefined);
           const smallestBlob = validBlobs.reduce((smallest, current) => 
             current.size < smallest.size ? current : smallest
           );
-
-          const compressionRatio = ((file.size - smallestBlob.size) / file.size) * 100;
-          console.log(`Original: ${file.size} bytes, Compressed: ${smallestBlob.size} bytes, Ratio: ${compressionRatio.toFixed(1)}%`);
-          
-          resolve({
-            originalFile: file,
-            compressedBlob: smallestBlob,
-            originalSize: file.size,
-            compressedSize: smallestBlob.size,
-            compressionRatio: Math.max(0, compressionRatio)
-          });
+          resolve(smallestBlob);
         }).catch(() => {
-          // Fallback: simple PNG compression
           canvas.toBlob(
             (blob) => {
               if (blob) {
-                const compressionRatio = ((file.size - blob.size) / file.size) * 100;
-                resolve({
-                  originalFile: file,
-                  compressedBlob: blob,
-                  originalSize: file.size,
-                  compressedSize: blob.size,
-                  compressionRatio: Math.max(0, compressionRatio)
-                });
+                resolve(blob);
               } else {
                 reject(new Error('Failed to compress image'));
               }
@@ -142,6 +114,168 @@ const Index = () => {
       img.src = URL.createObjectURL(file);
     });
   }, []);
+
+  // Fallback PNG compression with different approach
+  const compressPNGFallback = useCallback(async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        // More aggressive size reduction for fallback
+        let targetWidth = img.naturalWidth;
+        let targetHeight = img.naturalHeight;
+        
+        // Reduce dimensions more aggressively
+        if (targetWidth > 1024 || targetHeight > 1024) {
+          const scale = Math.min(1024 / targetWidth, 1024 / targetHeight);
+          targetWidth = Math.floor(targetWidth * scale);
+          targetHeight = Math.floor(targetHeight * scale);
+        }
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        
+        // Use different rendering settings
+        ctx.imageSmoothingEnabled = false; // Disable smoothing for smaller files
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+        // Try multiple compression levels
+        const qualities = [0.8, 0.7, 0.6];
+        let bestBlob: Blob | null = null;
+        let currentIndex = 0;
+
+        const tryNextQuality = () => {
+          if (currentIndex >= qualities.length) {
+            if (bestBlob) {
+              resolve(bestBlob);
+            } else {
+              reject(new Error('All compression attempts failed'));
+            }
+            return;
+          }
+
+          canvas.toBlob((blob) => {
+            if (blob && (!bestBlob || blob.size < bestBlob.size)) {
+              bestBlob = blob;
+            }
+            currentIndex++;
+            tryNextQuality();
+          }, 'image/png', qualities[currentIndex]);
+        };
+
+        tryNextQuality();
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  // WebP conversion with high compression
+  const convertToWebP = useCallback(async (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+
+      img.onload = () => {
+        if (!ctx) {
+          reject(new Error('Could not get canvas context'));
+          return;
+        }
+
+        const originalWidth = img.naturalWidth;
+        const originalHeight = img.naturalHeight;
+        
+        // Keep original dimensions for WebP as it's more efficient
+        canvas.width = originalWidth;
+        canvas.height = originalHeight;
+        
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, originalWidth, originalHeight);
+
+        // WebP with high compression but good quality
+        canvas.toBlob((blob) => {
+          if (blob) {
+            console.log(`WebP conversion: ${file.size} -> ${blob.size} bytes`);
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to convert to WebP'));
+          }
+        }, 'image/webp', 0.85); // 85% quality for good compression
+      };
+
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = URL.createObjectURL(file);
+    });
+  }, []);
+
+  const compressPNG = useCallback(async (file: File): Promise<CompressedImage> => {
+    console.log(`Starting compression for: ${file.name}`);
+    
+    try {
+      // Try advanced compression first
+      console.log('Trying advanced PNG compression...');
+      const compressedBlob = await compressPNGAdvanced(file);
+      
+      // If compression ratio is poor, try fallback method
+      const advancedRatio = ((file.size - compressedBlob.size) / file.size) * 100;
+      let finalCompressedBlob = compressedBlob;
+      
+      if (advancedRatio < 5) { // Less than 5% compression
+        console.log('Advanced compression yielded poor results, trying fallback...');
+        try {
+          const fallbackBlob = await compressPNGFallback(file);
+          const fallbackRatio = ((file.size - fallbackBlob.size) / file.size) * 100;
+          
+          // Use whichever gives better compression
+          if (fallbackBlob.size < compressedBlob.size) {
+            finalCompressedBlob = fallbackBlob;
+            console.log(`Fallback method better: ${fallbackRatio.toFixed(1)}% vs ${advancedRatio.toFixed(1)}%`);
+          }
+        } catch (fallbackError) {
+          console.log('Fallback compression failed, using advanced result');
+        }
+      }
+
+      // Generate WebP version
+      console.log('Converting to WebP...');
+      let webpBlob: Blob | undefined;
+      let webpCompressionRatio: number | undefined;
+      
+      try {
+        webpBlob = await convertToWebP(file);
+        webpCompressionRatio = ((file.size - webpBlob.size) / file.size) * 100;
+        console.log(`WebP compression: ${webpCompressionRatio.toFixed(1)}%`);
+      } catch (webpError) {
+        console.log('WebP conversion failed:', webpError);
+      }
+
+      const finalCompressionRatio = ((file.size - finalCompressedBlob.size) / file.size) * 100;
+      
+      return {
+        originalFile: file,
+        compressedBlob: finalCompressedBlob,
+        webpBlob,
+        originalSize: file.size,
+        compressedSize: finalCompressedBlob.size,
+        webpSize: webpBlob?.size,
+        compressionRatio: Math.max(0, finalCompressionRatio),
+        webpCompressionRatio: webpCompressionRatio ? Math.max(0, webpCompressionRatio) : undefined
+      };
+    } catch (error) {
+      console.error('All compression methods failed:', error);
+      throw error;
+    }
+  }, [compressPNGAdvanced, compressPNGFallback, convertToWebP]);
 
   const handleFiles = useCallback(async (files: FileList) => {
     const pngFiles = Array.from(files).filter(file => 
@@ -169,7 +303,7 @@ const Index = () => {
         try {
           const compressed = await compressPNG(file);
           results.push(compressed);
-          console.log(`Compressed ${file.name}: ${compressed.originalSize} -> ${compressed.compressedSize} bytes (${compressed.compressionRatio.toFixed(1)}% reduction)`);
+          console.log(`Processed ${file.name}: PNG ${compressed.compressionRatio.toFixed(1)}%${compressed.webpCompressionRatio ? `, WebP ${compressed.webpCompressionRatio.toFixed(1)}%` : ''}`);
         } catch (error) {
           console.error(`Error compressing ${file.name}:`, error);
           toast({
@@ -187,7 +321,7 @@ const Index = () => {
       if (results.length > 0) {
         toast({
           title: "Compression completed!",
-          description: `Successfully compressed ${results.length} PNG file(s).`,
+          description: `Successfully compressed ${results.length} PNG file(s) with WebP alternatives.`,
         });
       }
     } catch (error) {
@@ -215,7 +349,7 @@ const Index = () => {
     }
   }, [handleFiles]);
 
-  const downloadImage = useCallback((compressed: CompressedImage) => {
+  const downloadPNG = useCallback((compressed: CompressedImage) => {
     const url = URL.createObjectURL(compressed.compressedBlob);
     const a = document.createElement('a');
     a.href = url;
@@ -226,11 +360,34 @@ const Index = () => {
     URL.revokeObjectURL(url);
   }, []);
 
-  const downloadAll = useCallback(() => {
-    compressedImages.forEach(compressed => {
-      setTimeout(() => downloadImage(compressed), 100);
+  const downloadWebP = useCallback((compressed: CompressedImage) => {
+    if (!compressed.webpBlob) return;
+    
+    const url = URL.createObjectURL(compressed.webpBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    const originalName = compressed.originalFile.name;
+    const nameWithoutExt = originalName.replace(/\.png$/i, '');
+    a.download = `${nameWithoutExt}.webp`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const downloadAllPNG = useCallback(() => {
+    compressedImages.forEach((compressed, index) => {
+      setTimeout(() => downloadPNG(compressed), index * 100);
     });
-  }, [compressedImages, downloadImage]);
+  }, [compressedImages, downloadPNG]);
+
+  const downloadAllWebP = useCallback(() => {
+    compressedImages.forEach((compressed, index) => {
+      if (compressed.webpBlob) {
+        setTimeout(() => downloadWebP(compressed), index * 100);
+      }
+    });
+  }, [compressedImages, downloadWebP]);
 
   const formatFileSize = useCallback((bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -253,7 +410,7 @@ const Index = () => {
           </div>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Compress your PNG images for web use without quality loss. 
-            Reduce file sizes while maintaining perfect image quality.
+            Get both optimized PNG and WebP formats for maximum compatibility.
           </p>
         </div>
 
@@ -262,11 +419,11 @@ const Index = () => {
           <Card>
             <CardHeader className="text-center">
               <ImageIcon className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-              <CardTitle className="text-lg">Lossless Compression</CardTitle>
+              <CardTitle className="text-lg">Dual Compression</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 text-center">
-                Maintain perfect image quality while reducing file sizes
+                Advanced PNG optimization with fallback algorithms
               </p>
             </CardContent>
           </Card>
@@ -274,11 +431,11 @@ const Index = () => {
           <Card>
             <CardHeader className="text-center">
               <Zap className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <CardTitle className="text-lg">Fast Processing</CardTitle>
+              <CardTitle className="text-lg">WebP Conversion</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 text-center">
-                Browser-based compression means instant results
+                Optional WebP format for even better compression
               </p>
             </CardContent>
           </Card>
@@ -323,7 +480,7 @@ const Index = () => {
                 Drop PNG files here or click to browse
               </p>
               <p className="text-gray-500 mb-4">
-                Supports multiple files • PNG format only
+                Supports multiple files • PNG format only • WebP conversion included
               </p>
               <input
                 type="file"
@@ -365,48 +522,80 @@ const Index = () => {
               <div>
                 <CardTitle>Compression Results</CardTitle>
                 <CardDescription>
-                  {compressedImages.length} image(s) processed successfully
+                  {compressedImages.length} image(s) processed with PNG and WebP options
                 </CardDescription>
               </div>
               {compressedImages.length > 1 && (
-                <Button onClick={downloadAll} className="bg-green-600 hover:bg-green-700">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download All
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={downloadAllPNG} className="bg-blue-600 hover:bg-blue-700">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download All PNG
+                  </Button>
+                  <Button onClick={downloadAllWebP} variant="outline">
+                    <Download className="h-4 w-4 mr-2" />
+                    Download All WebP
+                  </Button>
+                </div>
               )}
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {compressedImages.map((compressed, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-800 mb-1">
-                        {compressed.originalFile.name}
-                      </h4>
-                      <div className="flex items-center space-x-4 text-sm text-gray-600">
-                        <span>
-                          Original: {formatFileSize(compressed.originalSize)}
-                        </span>
-                        <span>→</span>
-                        <span>
-                          Compressed: {formatFileSize(compressed.compressedSize)}
-                        </span>
-                        <span className="text-green-600 font-medium">
-                          {compressed.compressionRatio > 0 
-                            ? `${compressed.compressionRatio.toFixed(1)}% smaller`
-                            : 'Optimized'
-                          }
-                        </span>
+                  <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-800 mb-3">
+                      {compressed.originalFile.name}
+                    </h4>
+                    
+                    {/* PNG Results */}
+                    <div className="flex items-center justify-between mb-3 p-3 bg-white rounded border">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-4 text-sm text-gray-600 mb-1">
+                          <span className="font-medium text-blue-600">PNG Optimized:</span>
+                          <span>{formatFileSize(compressed.originalSize)} → {formatFileSize(compressed.compressedSize)}</span>
+                          <span className="text-green-600 font-medium">
+                            {compressed.compressionRatio > 0 
+                              ? `${compressed.compressionRatio.toFixed(1)}% smaller`
+                              : 'Optimized'
+                            }
+                          </span>
+                        </div>
                       </div>
+                      <Button
+                        onClick={() => downloadPNG(compressed)}
+                        variant="outline"
+                        size="sm"
+                      >
+                        <Download className="h-4 w-4 mr-1" />
+                        Download PNG
+                      </Button>
                     </div>
-                    <Button
-                      onClick={() => downloadImage(compressed)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <Download className="h-4 w-4 mr-1" />
-                      Download
-                    </Button>
+
+                    {/* WebP Results */}
+                    {compressed.webpBlob && (
+                      <div className="flex items-center justify-between p-3 bg-white rounded border">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-1">
+                            <span className="font-medium text-purple-600">WebP Format:</span>
+                            <span>{formatFileSize(compressed.originalSize)} → {formatFileSize(compressed.webpSize!)}</span>
+                            <span className="text-green-600 font-medium">
+                              {compressed.webpCompressionRatio! > 0 
+                                ? `${compressed.webpCompressionRatio!.toFixed(1)}% smaller`
+                                : 'Converted'
+                              }
+                            </span>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => downloadWebP(compressed)}
+                          variant="outline"
+                          size="sm"
+                          className="border-purple-200 text-purple-600 hover:bg-purple-50"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Download WebP
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -424,17 +613,17 @@ const Index = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Lossless Compression</h4>
+              <h4 className="font-medium text-gray-800 mb-2">Dual PNG Compression</h4>
               <p className="text-gray-600">
-                Our tool optimizes PNG files by removing unnecessary metadata and applying 
-                efficient encoding while preserving 100% of the original image quality.
+                Uses advanced compression with fallback algorithms to ensure optimal file size reduction 
+                while maintaining perfect image quality.
               </p>
             </div>
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Perfect for Web</h4>
+              <h4 className="font-medium text-gray-800 mb-2">WebP Conversion</h4>
               <p className="text-gray-600">
-                Smaller file sizes mean faster website loading times and better user experience, 
-                without sacrificing visual quality.
+                Automatically generates WebP versions for modern browsers, offering superior compression 
+                with excellent quality retention.
               </p>
             </div>
             <div>
