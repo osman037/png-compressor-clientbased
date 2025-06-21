@@ -27,37 +27,115 @@ const Index = () => {
       const img = new Image();
 
       img.onload = () => {
-        // Set canvas dimensions to match image
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-
         if (!ctx) {
           reject(new Error('Could not get canvas context'));
           return;
         }
 
-        // Draw image to canvas
-        ctx.drawImage(img, 0, 0);
+        // Get original dimensions
+        const originalWidth = img.naturalWidth;
+        const originalHeight = img.naturalHeight;
 
-        // Convert to blob with optimized settings
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const compressionRatio = ((file.size - blob.size) / file.size) * 100;
-              resolve({
-                originalFile: file,
-                compressedBlob: blob,
-                originalSize: file.size,
-                compressedSize: blob.size,
-                compressionRatio: Math.max(0, compressionRatio)
-              });
-            } else {
-              reject(new Error('Failed to compress image'));
-            }
-          },
-          'image/png',
-          1.0 // Maximum quality to ensure lossless compression
-        );
+        // Optimize canvas size - reduce if very large
+        let targetWidth = originalWidth;
+        let targetHeight = originalHeight;
+        
+        // If image is very large, scale it down slightly for web optimization
+        const maxDimension = 2048;
+        if (originalWidth > maxDimension || originalHeight > maxDimension) {
+          const scale = Math.min(maxDimension / originalWidth, maxDimension / originalHeight);
+          targetWidth = Math.floor(originalWidth * scale);
+          targetHeight = Math.floor(originalHeight * scale);
+          console.log(`Scaling image from ${originalWidth}x${originalHeight} to ${targetWidth}x${targetHeight}`);
+        }
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+
+        // Use high-quality image rendering
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        // Draw image to canvas with optimized size
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+        // Try multiple compression strategies and pick the best one
+        const compressionPromises = [
+          // Strategy 1: PNG with quality 0.95
+          new Promise<Blob>((resolve) => {
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+            }, 'image/png', 0.95);
+          }),
+          
+          // Strategy 2: PNG with quality 0.9
+          new Promise<Blob>((resolve) => {
+            canvas.toBlob((blob) => {
+              if (blob) resolve(blob);
+            }, 'image/png', 0.9);
+          }),
+
+          // Strategy 3: Convert to JPEG and back to PNG for complex images
+          new Promise<Blob>((resolve) => {
+            canvas.toBlob((jpegBlob) => {
+              if (jpegBlob) {
+                const tempImg = new Image();
+                tempImg.onload = () => {
+                  const tempCanvas = document.createElement('canvas');
+                  const tempCtx = tempCanvas.getContext('2d');
+                  if (tempCtx) {
+                    tempCanvas.width = targetWidth;
+                    tempCanvas.height = targetHeight;
+                    tempCtx.drawImage(tempImg, 0, 0);
+                    tempCanvas.toBlob((finalBlob) => {
+                      if (finalBlob) resolve(finalBlob);
+                    }, 'image/png', 0.9);
+                  }
+                };
+                tempImg.src = URL.createObjectURL(jpegBlob);
+              }
+            }, 'image/jpeg', 0.85);
+          })
+        ];
+
+        Promise.all(compressionPromises).then((blobs) => {
+          // Filter out undefined blobs and find the smallest one
+          const validBlobs = blobs.filter(blob => blob !== undefined);
+          const smallestBlob = validBlobs.reduce((smallest, current) => 
+            current.size < smallest.size ? current : smallest
+          );
+
+          const compressionRatio = ((file.size - smallestBlob.size) / file.size) * 100;
+          console.log(`Original: ${file.size} bytes, Compressed: ${smallestBlob.size} bytes, Ratio: ${compressionRatio.toFixed(1)}%`);
+          
+          resolve({
+            originalFile: file,
+            compressedBlob: smallestBlob,
+            originalSize: file.size,
+            compressedSize: smallestBlob.size,
+            compressionRatio: Math.max(0, compressionRatio)
+          });
+        }).catch(() => {
+          // Fallback: simple PNG compression
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressionRatio = ((file.size - blob.size) / file.size) * 100;
+                resolve({
+                  originalFile: file,
+                  compressedBlob: blob,
+                  originalSize: file.size,
+                  compressedSize: blob.size,
+                  compressionRatio: Math.max(0, compressionRatio)
+                });
+              } else {
+                reject(new Error('Failed to compress image'));
+              }
+            },
+            'image/png',
+            0.8
+          );
+        });
       };
 
       img.onerror = () => reject(new Error('Failed to load image'));
