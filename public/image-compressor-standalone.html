@@ -1,26 +1,24 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Compressor Pro - Free Online PNG & WebP Compression Tool</title>
+    <title>ImageZip - Free Online Image Compressor</title>
     <meta name="description" content="Free online image compressor tool. Compress PNG, JPG, and WebP images instantly in your browser. Get dual PNG/WebP output with 100% privacy - no files uploaded to servers.">
     <meta name="keywords" content="image compressor, PNG compressor, WebP converter, image optimizer, photo compression, free image tool">
     <meta name="robots" content="index, follow">
     
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
-    <meta property="og:title" content="Image Compressor Pro - Free Online Compression Tool">
+    <meta property="og:title" content="ImageZip - Free Online Image Compressor">
     <meta property="og:description" content="Compress images instantly in your browser. Dual PNG/WebP output, batch processing, 100% private.">
-    <meta property="og:url" content="https://yoursite.com">
     
     <!-- Schema.org structured data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebApplication",
-      "name": "Image Compressor Pro",
+      "name": "ImageZip",
       "description": "Free online image compression tool with dual PNG/WebP output",
       "applicationCategory": "PhotographyApplication",
       "operatingSystem": "Web Browser",
@@ -41,118 +39,143 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #0f0f23;
+            color: #e2e8f0;
             min-height: 100vh;
-            padding: 20px;
             line-height: 1.6;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
+            padding: 2rem;
         }
         
         .header {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            padding: 3rem 2rem;
             text-align: center;
+            margin-bottom: 3rem;
         }
         
-        .header h1 {
-            font-size: 3rem;
-            font-weight: bold;
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
             margin-bottom: 1rem;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
-        .header .emoji {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            display: block;
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
         }
         
-        .header p {
-            font-size: 1.2rem;
-            opacity: 0.9;
+        .logo-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1.125rem;
+            color: #94a3b8;
             max-width: 600px;
             margin: 0 auto;
         }
         
-        .main-content {
-            padding: 3rem 2rem;
-        }
-        
-        .upload-section {
-            background: #f8fafc;
-            border: 3px dashed #d1d5db;
+        .upload-zone {
+            background: #1e293b;
+            border: 2px dashed #475569;
             border-radius: 16px;
-            padding: 4rem 2rem;
+            padding: 3rem 2rem;
             text-align: center;
             transition: all 0.3s ease;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
             position: relative;
+            overflow: hidden;
         }
         
-        .upload-section:hover {
-            border-color: #3b82f6;
-            background: #eff6ff;
+        .upload-zone::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .upload-zone:hover::before,
+        .upload-zone.dragover::before {
+            opacity: 1;
+        }
+        
+        .upload-zone:hover {
+            border-color: #6366f1;
             transform: translateY(-2px);
         }
         
-        .upload-section.dragover {
-            border-color: #3b82f6;
-            background: #eff6ff;
+        .upload-zone.dragover {
+            border-color: #6366f1;
             transform: scale(1.02);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
         }
         
         .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 1.5rem;
-            color: #6b7280;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #64748b;
             transition: color 0.3s ease;
         }
         
-        .upload-section:hover .upload-icon {
-            color: #3b82f6;
+        .upload-zone:hover .upload-icon {
+            color: #6366f1;
         }
         
         .upload-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #1f2937;
             margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .upload-description {
-            color: #6b7280;
+            color: #94a3b8;
             margin-bottom: 2rem;
-            font-size: 1rem;
+            position: relative;
+            z-index: 1;
         }
         
         .upload-btn {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
             border: none;
             padding: 1rem 2rem;
             border-radius: 12px;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
+            position: relative;
+            z-index: 1;
         }
         
         .upload-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
         }
         
         .upload-btn:disabled {
@@ -170,24 +193,25 @@
         
         .progress-bar {
             width: 100%;
-            height: 12px;
-            background: #e5e7eb;
-            border-radius: 6px;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
             overflow: hidden;
             margin-bottom: 1rem;
         }
         
         .progress-fill {
             height: 100%;
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             transition: width 0.3s ease;
-            border-radius: 6px;
+            border-radius: 4px;
         }
         
         .progress-text {
             text-align: center;
-            color: #6b7280;
+            color: #94a3b8;
             font-weight: 500;
+            font-size: 0.875rem;
         }
         
         .results-section {
@@ -206,68 +230,68 @@
         .results-title {
             font-size: 1.5rem;
             font-weight: 600;
-            color: #1f2937;
         }
         
         .results-subtitle {
-            color: #6b7280;
-            font-size: 0.9rem;
+            color: #94a3b8;
+            font-size: 0.875rem;
         }
         
         .bulk-actions {
             display: flex;
-            gap: 0.5rem;
+            gap: 0.75rem;
             flex-wrap: wrap;
         }
         
         .btn {
             padding: 0.5rem 1rem;
             border-radius: 8px;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
             text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
+            gap: 0.5rem;
+            border: none;
         }
         
         .btn-outline {
-            border: 1px solid #d1d5db;
-            background: white;
-            color: #374151;
+            background: #334155;
+            color: #e2e8f0;
+            border: 1px solid #475569;
         }
         
         .btn-outline:hover {
-            background: #f3f4f6;
-            border-color: #9ca3af;
+            background: #475569;
+            border-color: #64748b;
+            transform: translateY(-1px);
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
-            border: none;
         }
         
         .btn-primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
         }
         
         .result-item {
-            background: white;
-            border: 1px solid #e5e7eb;
+            background: #1e293b;
+            border: 1px solid #334155;
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             transition: all 0.2s ease;
         }
         
         .result-item:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            border-color: #475569;
         }
         
         .result-header {
@@ -281,16 +305,18 @@
         
         .result-filename {
             font-weight: 600;
-            color: #1f2937;
             word-break: break-all;
             flex: 1;
             min-width: 200px;
         }
         
         .result-time {
-            color: #6b7280;
-            font-size: 0.8rem;
+            color: #94a3b8;
+            font-size: 0.75rem;
             white-space: nowrap;
+            background: #334155;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
         }
         
         .result-formats {
@@ -300,24 +326,26 @@
         }
         
         .format-result {
-            background: #f8fafc;
+            background: #0f172a;
             border-radius: 8px;
             padding: 1rem;
+            border: 1px solid #1e293b;
         }
         
         .format-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
         
         .format-name {
             font-weight: 600;
+            font-size: 0.875rem;
         }
         
         .format-name.png {
-            color: #3b82f6;
+            color: #6366f1;
         }
         
         .format-name.webp {
@@ -328,27 +356,30 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.9rem;
-            color: #6b7280;
+            font-size: 0.875rem;
+            color: #94a3b8;
         }
         
         .size-change {
-            color: #059669;
+            color: #10b981;
             font-weight: 600;
         }
         
         .features-section {
             margin-top: 4rem;
             padding-top: 3rem;
-            border-top: 1px solid #e5e7eb;
+            border-top: 1px solid #334155;
         }
         
         .features-title {
             text-align: center;
             font-size: 2rem;
             font-weight: 600;
-            color: #1f2937;
             margin-bottom: 3rem;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .features-grid {
@@ -360,46 +391,47 @@
         .feature-card {
             text-align: center;
             padding: 2rem;
-            background: #f8fafc;
+            background: #1e293b;
             border-radius: 16px;
+            border: 1px solid #334155;
             transition: all 0.3s ease;
         }
         
         .feature-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-color: #475569;
         }
         
         .feature-icon {
-            font-size: 3rem;
+            font-size: 2.5rem;
             margin-bottom: 1rem;
             display: block;
         }
         
         .feature-title {
-            font-size: 1.2rem;
+            font-size: 1.25rem;
             font-weight: 600;
-            color: #1f2937;
             margin-bottom: 0.5rem;
         }
         
         .feature-description {
-            color: #6b7280;
+            color: #94a3b8;
             line-height: 1.6;
         }
         
         .tech-specs {
             margin-top: 3rem;
             padding: 2rem;
-            background: #f8fafc;
+            background: #1e293b;
             border-radius: 16px;
+            border: 1px solid #334155;
         }
         
         .tech-title {
             text-align: center;
             font-size: 1.5rem;
             font-weight: 600;
-            color: #1f2937;
             margin-bottom: 2rem;
         }
         
@@ -411,14 +443,14 @@
         
         .tech-item h4 {
             font-weight: 600;
-            color: #1f2937;
             margin-bottom: 0.5rem;
+            color: #6366f1;
         }
         
         .tech-item p {
-            color: #6b7280;
-            font-size: 0.9rem;
-            margin-bottom: 0.3rem;
+            color: #94a3b8;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
         }
         
         .hidden {
@@ -426,19 +458,15 @@
         }
         
         @media (max-width: 768px) {
-            .header h1 {
+            .container {
+                padding: 1rem;
+            }
+            
+            .logo-text {
                 font-size: 2rem;
             }
             
-            .header .emoji {
-                font-size: 3rem;
-            }
-            
-            .main-content {
-                padding: 2rem 1rem;
-            }
-            
-            .upload-section {
+            .upload-zone {
                 padding: 2rem 1rem;
             }
             
@@ -460,13 +488,15 @@
 <body>
     <div class="container">
         <header class="header">
-            <span class="emoji">🚀</span>
-            <h1>Image Compressor Pro</h1>
-            <p>Lightning-fast image compression with dual PNG/WebP output. Process multiple images in seconds with 100% privacy.</p>
+            <div class="logo">
+                <div class="logo-icon">⚡</div>
+                <h1 class="logo-text">ImageZip</h1>
+            </div>
+            <p class="subtitle">Lightning-fast image compression with dual PNG/WebP output. Process multiple images in seconds with 100% privacy.</p>
         </header>
 
-        <main class="main-content">
-            <section class="upload-section" id="uploadArea">
+        <main>
+            <section class="upload-zone" id="uploadArea">
                 <div class="upload-icon">📸</div>
                 <h2 class="upload-title">Drop Images Here or Click to Upload</h2>
                 <p class="upload-description">
@@ -504,7 +534,7 @@
             </section>
 
             <section class="features-section">
-                <h2 class="features-title">Why Choose Our Image Compressor?</h2>
+                <h2 class="features-title">Why Choose ImageZip?</h2>
                 <div class="features-grid">
                     <div class="feature-card">
                         <span class="feature-icon">⚡</span>
@@ -665,37 +695,55 @@
                     const img = new Image();
 
                     img.onload = async () => {
-                        const maxDimension = 1920;
-                        let { width, height } = img;
-                        
-                        if (width > maxDimension || height > maxDimension) {
-                            const scale = Math.min(maxDimension / width, maxDimension / height);
-                            width *= scale;
-                            height *= scale;
+                        try {
+                            const maxDimension = 1920;
+                            let { width, height } = img;
+                            
+                            if (width > maxDimension || height > maxDimension) {
+                                const scale = Math.min(maxDimension / width, maxDimension / height);
+                                width = Math.round(width * scale);
+                                height = Math.round(height * scale);
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            ctx.imageSmoothingEnabled = true;
+                            ctx.imageSmoothingQuality = 'high';
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            // Create both PNG and WebP blobs
+                            const createBlob = (format, quality) => {
+                                return new Promise((resolve) => {
+                                    canvas.toBlob((blob) => {
+                                        if (blob) {
+                                            resolve(blob);
+                                        } else {
+                                            // Fallback if blob creation fails
+                                            canvas.toBlob(resolve, 'image/png', 0.9);
+                                        }
+                                    }, format, quality);
+                                });
+                            };
+
+                            const [pngBlob, webpBlob] = await Promise.all([
+                                createBlob('image/png', 0.9),
+                                createBlob('image/webp', 0.85)
+                            ]);
+
+                            const endTime = performance.now();
+
+                            resolve({
+                                file,
+                                pngBlob,
+                                webpBlob,
+                                originalSize: file.size,
+                                pngSize: pngBlob.size,
+                                webpSize: webpBlob.size,
+                                processingTime: endTime - startTime
+                            });
+                        } catch (error) {
+                            reject(error);
                         }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        ctx.imageSmoothingEnabled = true;
-                        ctx.imageSmoothingQuality = 'high';
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        const [pngBlob, webpBlob] = await Promise.all([
-                            new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9)),
-                            new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.85))
-                        ]);
-
-                        const endTime = performance.now();
-
-                        resolve({
-                            file,
-                            pngBlob,
-                            webpBlob,
-                            originalSize: file.size,
-                            pngSize: pngBlob.size,
-                            webpSize: webpBlob.size,
-                            processingTime: endTime - startTime
-                        });
                     };
 
                     img.onerror = () => reject(new Error('Failed to load image'));
@@ -755,13 +803,15 @@
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `compressed_${fileName.replace(/\.[^/.]+$/, '')}.${format}`;
+                document.body.appendChild(a);
                 a.click();
+                document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }
 
             downloadAll(format) {
                 Object.keys(this.downloadData).forEach(fileName => {
-                    this.download(fileName, format);
+                    setTimeout(() => this.download(fileName, format), 100);
                 });
             }
 

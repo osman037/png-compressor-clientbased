@@ -1,56 +1,40 @@
-# Welcome to your Lovable project
+# ImageZip - Free Online Image Compressor
 
-## Project info
+A lightning-fast, browser-based image compression tool that provides dual PNG/WebP output with 100% privacy.
 
-**URL**: https://lovable.dev/projects/c1cf9579-f92c-43fd-891a-fa37e419a8c0
+## Features
 
-## How can I edit this code?
+- **Lightning Fast**: Client-side processing for instant results
+- **Dual Output**: Get both optimized PNG and modern WebP formats
+- **100% Private**: All processing happens in your browser
+- **Batch Processing**: Upload and compress multiple images at once
+- **Smart Optimization**: Intelligent resizing and compression algorithms
+- **No Installation Required**: Works on any device with a modern web browser
 
-There are several ways of editing your application.
+## Supported Formats
 
-**Use Lovable**
+- **Input**: PNG, JPG, JPEG, WebP, GIF
+- **Output**: Optimized PNG + WebP
+- **File Size**: Up to 50MB per image
+- **Processing**: Unlimited batch files
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c1cf9579-f92c-43fd-891a-fa37e419a8c0) and start prompting.
+## Technical Specifications
 
-Changes made via Lovable will be committed automatically to this repo.
+- **Processing Speed**: 0.5-3 seconds per image
+- **Compression Ratio**: Up to 80% size reduction
+- **Max Dimension**: 1920px (smart resizing)
+- **Quality**: PNG (90%), WebP (85%)
+- **Browser Support**: Chrome, Firefox, Safari, Edge
 
-**Use your preferred IDE**
+## How to Use
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Visit the application
+2. Drag and drop images or click to select files
+3. Wait for processing to complete
+4. Download individual files or use bulk download
+5. Enjoy your compressed images!
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
+## Development
 
 This project is built with:
 
@@ -60,14 +44,34 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 
-## How can I deploy this project?
+### Getting Started
 
-Simply open [Lovable](https://lovable.dev/projects/c1cf9579-f92c-43fd-891a-fa37e419a8c0) and click on Share -> Publish.
+```sh
+# Install dependencies
+npm install
 
-## Can I connect a custom domain to my Lovable project?
+# Start development server
+npm run dev
 
-Yes, you can!
+# Build for production
+npm run build
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Privacy & Security
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- All image processing happens locally in your browser
+- No files are uploaded to any server
+- Complete privacy guaranteed
+- No data collection or tracking
+
+## Browser Compatibility
+
+Works on all modern browsers including:
+- Chrome 80+
+- Firefox 75+
+- Safari 13+
+- Edge 80+
+
+## License
+
+This project is open source and available under the MIT License.
