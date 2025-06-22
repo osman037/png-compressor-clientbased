@@ -1,0 +1,366 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Compressor Pro - Embed</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f8fafc;
+        }
+        .compressor-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .header h1 {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 0 0.5rem 0;
+        }
+        .upload-area {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.2s;
+            margin-bottom: 2rem;
+        }
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background: #f8fafc;
+        }
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            transform: scale(1.02);
+        }
+        .upload-btn {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .upload-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+        }
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            transition: width 0.3s ease;
+        }
+        .results {
+            margin-top: 2rem;
+        }
+        .result-item {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .download-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #475569;
+            padding: 6px 12px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-left: 8px;
+        }
+        .download-btn:hover {
+            background: #e2e8f0;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .feature {
+            text-align: center;
+            padding: 1.5rem;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .feature h3 {
+            color: #1e293b;
+            margin: 0.5rem 0;
+        }
+        .feature p {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="compressor-container">
+        <div class="header">
+            <h1>🚀 Image Compressor Pro</h1>
+            <p>Lightning-fast image compression with dual PNG/WebP output</p>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">📸</div>
+            <h3>Drop Images Here or Click to Upload</h3>
+            <p style="color: #64748b; margin-bottom: 1.5rem;">
+                Supports PNG, JPG, WebP • Max 50MB per file • Multiple files supported
+            </p>
+            <button class="upload-btn" id="uploadBtn">Select Images</button>
+            <input type="file" id="fileInput" accept="image/*" multiple class="hidden">
+            
+            <div id="progressContainer" class="hidden">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p id="progressText">Processing images...</p>
+            </div>
+        </div>
+
+        <div id="results" class="results hidden">
+            <h3>Compression Results</h3>
+            <div id="resultsList"></div>
+        </div>
+
+        <div class="features">
+            <div class="feature">
+                <div style="font-size: 2rem;">⚡</div>
+                <h3>Lightning Fast</h3>
+                <p>Client-side processing means instant results without server delays</p>
+            </div>
+            <div class="feature">
+                <div style="font-size: 2rem;">🎯</div>
+                <h3>Dual Output</h3>
+                <p>Get both optimized PNG and modern WebP formats automatically</p>
+            </div>
+            <div class="feature">
+                <div style="font-size: 2rem;">🔒</div>
+                <h3>100% Private</h3>
+                <p>All processing happens in your browser - files never leave your device</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class ImageCompressor {
+            constructor() {
+                this.fileInput = document.getElementById('fileInput');
+                this.uploadBtn = document.getElementById('uploadBtn');
+                this.uploadArea = document.getElementById('uploadArea');
+                this.progressContainer = document.getElementById('progressContainer');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.results = document.getElementById('results');
+                this.resultsList = document.getElementById('resultsList');
+                
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                this.uploadBtn.addEventListener('click', () => this.fileInput.click());
+                this.fileInput.addEventListener('change', (e) => this.handleFiles(e.target.files));
+                
+                this.uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.add('dragover');
+                });
+                
+                this.uploadArea.addEventListener('dragleave', () => {
+                    this.uploadArea.classList.remove('dragover');
+                });
+                
+                this.uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    this.uploadArea.classList.remove('dragover');
+                    this.handleFiles(e.dataTransfer.files);
+                });
+            }
+
+            async handleFiles(files) {
+                const imageFiles = Array.from(files).filter(file => 
+                    file.type.startsWith('image/') && file.size <= 50 * 1024 * 1024
+                );
+
+                if (imageFiles.length === 0) {
+                    alert('Please select valid image files (max 50MB each)');
+                    return;
+                }
+
+                this.showProgress();
+                this.results.classList.add('hidden');
+                this.resultsList.innerHTML = '';
+
+                const startTime = performance.now();
+
+                for (let i = 0; i < imageFiles.length; i++) {
+                    const file = imageFiles[i];
+                    try {
+                        const result = await this.compressImage(file);
+                        this.addResult(result);
+                        this.updateProgress((i + 1) / imageFiles.length * 100);
+                    } catch (error) {
+                        console.error(`Error processing ${file.name}:`, error);
+                    }
+                }
+
+                const totalTime = performance.now() - startTime;
+                this.hideProgress();
+                this.showResults(imageFiles.length, totalTime);
+            }
+
+            async compressImage(file) {
+                return new Promise((resolve, reject) => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+
+                    img.onload = async () => {
+                        const maxDimension = 1920;
+                        let { width, height } = img;
+                        
+                        if (width > maxDimension || height > maxDimension) {
+                            const scale = Math.min(maxDimension / width, maxDimension / height);
+                            width *= scale;
+                            height *= scale;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = 'high';
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const [pngBlob, webpBlob] = await Promise.all([
+                            new Promise(resolve => canvas.toBlob(resolve, 'image/png', 0.9)),
+                            new Promise(resolve => canvas.toBlob(resolve, 'image/webp', 0.85))
+                        ]);
+
+                        resolve({
+                            file,
+                            pngBlob,
+                            webpBlob,
+                            originalSize: file.size,
+                            pngSize: pngBlob.size,
+                            webpSize: webpBlob.size
+                        });
+                    };
+
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    img.src = URL.createObjectURL(file);
+                });
+            }
+
+            addResult(result) {
+                const pngSavings = ((result.originalSize - result.pngSize) / result.originalSize * 100).toFixed(1);
+                const webpSavings = ((result.originalSize - result.webpSize) / result.originalSize * 100).toFixed(1);
+
+                const resultDiv = document.createElement('div');
+                resultDiv.className = 'result-item';
+                resultDiv.innerHTML = `
+                    <div>
+                        <strong>${result.file.name}</strong><br>
+                        <small>PNG: ${this.formatSize(result.originalSize)} → ${this.formatSize(result.pngSize)} (${pngSavings}% smaller)</small><br>
+                        <small>WebP: ${this.formatSize(result.originalSize)} → ${this.formatSize(result.webpSize)} (${webpSavings}% smaller)</small>
+                    </div>
+                    <div>
+                        <a href="#" class="download-btn" onclick="compressor.download('${result.file.name}', 'png')">PNG</a>
+                        <a href="#" class="download-btn" onclick="compressor.download('${result.file.name}', 'webp')">WebP</a>
+                    </div>
+                `;
+
+                this.resultsList.appendChild(resultDiv);
+                
+                // Store blobs for download
+                if (!this.downloadData) this.downloadData = {};
+                this.downloadData[result.file.name] = result;
+            }
+
+            download(fileName, format) {
+                const data = this.downloadData[fileName];
+                if (!data) return;
+
+                const blob = format === 'png' ? data.pngBlob : data.webpBlob;
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `compressed_${fileName.replace(/\.[^/.]+$/, '')}.${format}`;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+
+            showProgress() {
+                this.progressContainer.classList.remove('hidden');
+                this.uploadBtn.disabled = true;
+                this.uploadBtn.textContent = 'Processing...';
+            }
+
+            hideProgress() {
+                this.progressContainer.classList.add('hidden');
+                this.uploadBtn.disabled = false;
+                this.uploadBtn.textContent = 'Select Images';
+            }
+
+            updateProgress(percent) {
+                this.progressFill.style.width = percent + '%';
+                this.progressText.textContent = `Processing images... ${Math.round(percent)}%`;
+            }
+
+            showResults(count, time) {
+                this.results.classList.remove('hidden');
+                this.results.querySelector('h3').textContent = 
+                    `Compression Results - ${count} image(s) processed in ${(time/1000).toFixed(2)}s`;
+            }
+
+            formatSize(bytes) {
+                const sizes = ['B', 'KB', 'MB'];
+                if (bytes === 0) return '0B';
+                const i = Math.floor(Math.log(bytes) / Math.log(1024));
+                return `${(bytes / Math.pow(1024, i)).toFixed(1)}${sizes[i]}`;
+            }
+        }
+
+        // Initialize compressor
+        const compressor = new ImageCompressor();
+    </script>
+</body>
+</html>
