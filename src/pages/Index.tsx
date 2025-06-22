@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { Upload, Download, Image as ImageIcon, Zap, Check, AlertCircle } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon, Zap, Check, AlertCircle, Archive } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { toast } from '@/hooks/use-toast';
+import JSZip from 'jszip';
 
 interface CompressedImage {
   originalFile: File;
@@ -375,19 +376,91 @@ const Index = () => {
     URL.revokeObjectURL(url);
   }, []);
 
-  const downloadAllPNG = useCallback(() => {
-    compressedImages.forEach((compressed, index) => {
-      setTimeout(() => downloadPNG(compressed), index * 100);
-    });
-  }, [compressedImages, downloadPNG]);
+  const downloadAllPNGAsZip = useCallback(async () => {
+    if (compressedImages.length === 0) return;
 
-  const downloadAllWebP = useCallback(() => {
-    compressedImages.forEach((compressed, index) => {
-      if (compressed.webpBlob) {
-        setTimeout(() => downloadWebP(compressed), index * 100);
-      }
+    const zip = new JSZip();
+    
+    // Add each compressed PNG to the ZIP
+    compressedImages.forEach((compressed) => {
+      const fileName = `compressed_${compressed.originalFile.name}`;
+      zip.file(fileName, compressed.compressedBlob);
     });
-  }, [compressedImages, downloadWebP]);
+
+    try {
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `compressed_pngs_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "ZIP Download Complete",
+        description: `Downloaded ${compressedImages.length} compressed PNG files as ZIP.`,
+      });
+    } catch (error) {
+      console.error('Error creating PNG ZIP:', error);
+      toast({
+        title: "ZIP Creation Failed",
+        description: "Failed to create ZIP file for PNG images.",
+        variant: "destructive",
+      });
+    }
+  }, [compressedImages]);
+
+  const downloadAllWebPAsZip = useCallback(async () => {
+    const webpImages = compressedImages.filter(img => img.webpBlob);
+    
+    if (webpImages.length === 0) {
+      toast({
+        title: "No WebP Files",
+        description: "No WebP files available for download.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const zip = new JSZip();
+    
+    // Add each WebP file to the ZIP
+    webpImages.forEach((compressed) => {
+      const originalName = compressed.originalFile.name;
+      const nameWithoutExt = originalName.replace(/\.png$/i, '');
+      const fileName = `${nameWithoutExt}.webp`;
+      zip.file(fileName, compressed.webpBlob!);
+    });
+
+    try {
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `webp_images_${new Date().toISOString().split('T')[0]}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({
+        title: "WebP ZIP Download Complete",
+        description: `Downloaded ${webpImages.length} WebP files as ZIP.`,
+      });
+    } catch (error) {
+      console.error('Error creating WebP ZIP:', error);
+      toast({
+        title: "ZIP Creation Failed",
+        description: "Failed to create ZIP file for WebP images.",
+        variant: "destructive",
+      });
+    }
+  }, [compressedImages]);
+
+  const downloadAllPNG = downloadAllPNGAsZip;
+  const downloadAllWebP = downloadAllWebPAsZip;
 
   const formatFileSize = useCallback((bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -431,11 +504,11 @@ const Index = () => {
           <Card>
             <CardHeader className="text-center">
               <Zap className="h-8 w-8 text-green-600 mx-auto mb-2" />
-              <CardTitle className="text-lg">WebP Conversion</CardTitle>
+              <CardTitle className="text-lg">Dual WebP Conversion</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 text-center">
-                Optional WebP format for even better compression
+                Automatic WebP format generation for even better compression
               </p>
             </CardContent>
           </Card>
@@ -447,7 +520,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 text-center">
-                Your images never leave your browser - 100% secure
+                Your images never leave your browser - 100% secure processing
               </p>
             </CardContent>
           </Card>
@@ -527,14 +600,16 @@ const Index = () => {
               </div>
               {compressedImages.length > 1 && (
                 <div className="flex gap-2">
-                  <Button onClick={downloadAllPNG} className="bg-blue-600 hover:bg-blue-700">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download All PNG
+                  <Button onClick={downloadAllPNGAsZip} className="bg-blue-600 hover:bg-blue-700">
+                    <Archive className="h-4 w-4 mr-2" />
+                    Download PNG ZIP
                   </Button>
-                  <Button onClick={downloadAllWebP} variant="outline">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download All WebP
-                  </Button>
+                  {compressedImages.some(img => img.webpBlob) && (
+                    <Button onClick={downloadAllWebPAsZip} variant="outline" className="border-purple-200 text-purple-600 hover:bg-purple-50">
+                      <Archive className="h-4 w-4 mr-2" />
+                      Download WebP ZIP
+                    </Button>
+                  )}
                 </div>
               )}
             </CardHeader>
@@ -620,17 +695,17 @@ const Index = () => {
               </p>
             </div>
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">WebP Conversion</h4>
+              <h4 className="font-medium text-gray-800 mb-2">Dual WebP Conversion</h4>
               <p className="text-gray-600">
                 Automatically generates WebP versions for modern browsers, offering superior compression 
-                with excellent quality retention.
+                with excellent quality retention. Download both formats as convenient ZIP files.
               </p>
             </div>
             <div>
-              <h4 className="font-medium text-gray-800 mb-2">Privacy & Security</h4>
+              <h4 className="font-medium text-gray-800 mb-2">Privacy First</h4>
               <p className="text-gray-600">
                 All processing happens in your browser - your images are never uploaded to any server, 
-                ensuring complete privacy and security.
+                ensuring complete privacy and security. No server cleanup needed!
               </p>
             </div>
           </CardContent>
